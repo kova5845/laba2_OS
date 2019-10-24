@@ -1,13 +1,15 @@
 #pragma once
 #include <vector>
 #include <iostream>
+#include <ctime>
+#include <Windows.h>
 
 using namespace std;
 
 class Table
 {
-	vector <double> x;
-	vector <double> y;
+	vector <double> vector_x;
+	vector <double> vector_y;
 
 public: 
 	double getX();
@@ -28,7 +30,21 @@ public:
 	void setY(double y);
 };
 
-void write_log(Table* t, Point* p, SYSTEMTIME* st);
-void write_in_Point(Table* t, Point* p, SYSTEMTIME* st);
-void write_in_file(Table* t, Point* p, SYSTEMTIME* st);
-void count_func(Table* t, Point* p, SYSTEMTIME* st);
+class Member
+{
+
+public:
+	Table* table;
+	Point* point;
+	SYSTEMTIME** st;
+
+public:
+	Member(Table* table, Point* point, SYSTEMTIME** st);
+	Member();
+
+};
+
+DWORD WINAPI write_log(PVOID ptr);
+DWORD WINAPI write_in_Point(PVOID ptr);
+DWORD WINAPI write_in_file(PVOID ptr);
+DWORD WINAPI count_func(PVOID ptr);

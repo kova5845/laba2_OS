@@ -3,27 +3,29 @@
 #include "sourse.h"
 #include <fstream>
 #include <Windows.h>
+#include <ctime>
+
 using namespace std;
 
 
 double Table::getX()
 {
-	return x.back();
+	return vector_x.back();
 }
 
 double Table::getY()
 {
-	return y.back();
+	return vector_y.back();
 }
 
 void Table::setX(double x)
 {
-	this->x.insert(this->x.end(), x);
+	vector_x.push_back(x);
 }
 
 void Table::setY(double y)
 {
-	this->y.insert(this->y.end(), y);
+	vector_y.push_back(y);
 }
 
 
@@ -47,53 +49,74 @@ void Point::setY(double y)
 	this->y = y;
 }
 
-void write_log(Table* t, Point* p, SYSTEMTIME* st)
-{
-	ofstream fout;
-	fout.open("file.log");
-	fout << st[0].wHour
-		<< st[0].wMinute
-		<< st[0].wSecond
-		<< st[0].wMilliseconds
-		<< " "
-		<< st[1].wHour
-		<< st[1].wMinute
-		<< st[1].wSecond
-		<< st[1].wMilliseconds
-		<< " "
-		<< st[2].wHour
-		<< st[2].wMinute
-		<< st[2].wSecond
-		<< st[2].wMilliseconds
-		<< "\n";
-	fout.close();
+Member::Member(Table* table, Point* point, SYSTEMTIME** st) {
+	this->table = table;
+	this->point = point;
+	this->st = st;
 }
 
-void count_func(Table* t, Point* p, SYSTEMTIME* st)
+DWORD WINAPI count_func(LPVOID ptr)
 {
+	//Member* member = (Member*)(ptr);
+	Member* member = reinterpret_cast<Member*>(ptr);
 	double x = 0;
 	double h = 0.1;
-	while (true)
+	while (x<100)
 	{
-		t->setX(x);
-		t->setY(x);
-		GetLocalTime(&st[0]);
+		member->table->setX(x);
+		member->table->setY(x);
+		GetLocalTime(member->st[0]);
+		cout << x << "  " << x << "  " << member->st[0]->wSecond << endl;
 		x += h;
 	}
+
+	return (0);
 }
 
-void write_in_file(Table* t, Point* p, SYSTEMTIME* st)
+DWORD WINAPI write_in_file(PVOID ptr)
 {
+	Member* member = reinterpret_cast<Member*>(ptr);
 	ofstream fout;
 	fout.open("file.txt");
-	fout << t->getX() << " " << t->getY() << "\n";
-	GetLocalTime(&st[1]);
+	fout << member->table->getX() << " " << member->table->getY() << "\n";
+	GetLocalTime(member->st[1]);
 	fout.close();
+
+	return (0);
 }
 
-void write_in_Point(Table* t, Point* p, SYSTEMTIME* st)
+DWORD WINAPI write_in_Point(PVOID ptr)
 {
-	p->setX(t->getX());
-	p->setY(t->getY());
-	GetLocalTime(&st[2]);	
+	Member* member = reinterpret_cast<Member*>(ptr);
+	member->point->setX(member->table->getX());
+	member->point->setX(member->table->getY());
+	GetLocalTime(member->st[2]);
+
+	return (0);
+}
+
+DWORD WINAPI write_log(PVOID ptr)
+{
+	Member* member = reinterpret_cast<Member*>(ptr);
+	ofstream fout;
+
+	fout.open("file.log");
+	fout << member->st[0]->wHour
+		<< member->st[0]->wMinute
+		<< member->st[0]->wSecond
+		<< member->st[0]->wMilliseconds
+		<< " "
+		<< member->st[1]->wHour
+		<< member->st[1]->wMinute
+		<< member->st[1]->wSecond
+		<< member->st[1]->wMilliseconds
+		<< " "
+		<< member->st[2]->wHour
+		<< member->st[2]->wMinute
+		<< member->st[2]->wSecond
+		<< member->st[2]->wMilliseconds
+		<< "\n";
+	fout.close();
+
+	return (0);
 }
