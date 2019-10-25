@@ -6,11 +6,9 @@
 #include <process.h>
 #include <ctime>
 
-
-
 using namespace std;
 
-DWORD WINAPI SecondThread(PVOID pvParam);
+HANDLE ghMutex;
 
 int main()
 {
@@ -21,16 +19,21 @@ int main()
 		st[i] = new SYSTEMTIME;
 	Member* member = new Member(table, point, st);
 	DWORD dwThreadID;
-	HANDLE hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) count_func, member,
+	ghMutex = CreateMutex(NULL, FALSE, NULL);
+	HANDLE* hThread = new HANDLE[THREADCOUNT];
+	hThread[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) count_func, member,
 		0, &dwThreadID);
-	Sleep(1000);
-	CloseHandle(hThread);
+	hThread[1] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)write_in_file, member,
+		0, &dwThreadID);
+	hThread[2] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)write_in_Point, member,
+		0, &dwThreadID);
+	hThread[3] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)write_log, member,
+		0, &dwThreadID);
+
+	WaitForMultipleObjects(THREADCOUNT, hThread, TRUE, INFINITE);
+	for (int i = 0; i < THREADCOUNT; i++)
+		CloseHandle(hThread[i]);
+
+	CloseHandle(ghMutex);
 	return 0;
-}
-
-DWORD WINAPI SecondThread(PVOID pvParam) {
-
-	*((int*)pvParam) = 5;
-	
-	return (0);
 }

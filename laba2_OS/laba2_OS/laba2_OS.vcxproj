@@ -129,6 +129,10 @@
   <ItemGroup>
     <ClInclude Include="sourse.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="file.log" />
+    <Text Include="file.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

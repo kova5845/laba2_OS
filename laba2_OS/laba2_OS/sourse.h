@@ -6,6 +6,10 @@
 
 using namespace std;
 
+const int THREADCOUNT = 4;
+extern HANDLE ghMutex;
+
+
 class Table
 {
 	vector <double> vector_x;
@@ -40,7 +44,6 @@ public:
 
 public:
 	Member(Table* table, Point* point, SYSTEMTIME** st);
-	Member();
 
 };
 
