@@ -7,7 +7,8 @@
 using namespace std;
 
 const int THREADCOUNT = 4;
-extern HANDLE ghMutex;
+const int EVENTCOUNT = 4;
+extern HANDLE ghEvent[EVENTCOUNT];
 
 
 class Table

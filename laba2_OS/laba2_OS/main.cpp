@@ -8,7 +8,7 @@
 
 using namespace std;
 
-HANDLE ghMutex;
+HANDLE ghEvent[EVENTCOUNT];
 
 int main()
 {
@@ -19,7 +19,12 @@ int main()
 		st[i] = new SYSTEMTIME;
 	Member* member = new Member(table, point, st);
 	DWORD dwThreadID;
-	ghMutex = CreateMutex(NULL, FALSE, NULL);
+	for (int i = 0; i < EVENTCOUNT; i++)
+	{
+		ghEvent[i] = CreateEvent(NULL, TRUE, FALSE, TEXT("event" + i));
+	}
+	SetEvent(ghEvent[0]);
+
 	HANDLE* hThread = new HANDLE[THREADCOUNT];
 	hThread[0] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) count_func, member,
 		0, &dwThreadID);
@@ -30,10 +35,15 @@ int main()
 	hThread[3] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)write_log, member,
 		0, &dwThreadID);
 
+
 	WaitForMultipleObjects(THREADCOUNT, hThread, TRUE, INFINITE);
+
+	
 	for (int i = 0; i < THREADCOUNT; i++)
 		CloseHandle(hThread[i]);
-
-	CloseHandle(ghMutex);
+	for (int i = 0; i < EVENTCOUNT; i++)
+		CloseHandle(ghEvent);
+	
+	
 	return 0;
 }

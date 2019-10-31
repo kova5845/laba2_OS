@@ -6,12 +6,8 @@
 #include <ctime>
 
 using namespace std;
+extern HANDLE ghEvent[EVENTCOUNT];
 
-extern HANDLE ghMutex;
-bool FIRST = true;
-bool SECOND = false;
-bool THIRD = false;
-bool FORTH = false;
 
 double Table::getX()
 {
@@ -68,29 +64,25 @@ DWORD WINAPI count_func(LPVOID ptr)
 	double h = 0.1;
 	while (true)
 	{
-		if (FIRST)
+		dwWaitResult = WaitForSingleObject(ghEvent[0], INFINITE);
+		switch (dwWaitResult)
 		{
-			dwWaitResult = WaitForSingleObject(ghMutex, INFINITE);
-			switch (dwWaitResult)
-			{
 			case WAIT_OBJECT_0:
 
 				member->table->setX(x);
 				member->table->setY(x);
 				GetLocalTime(member->st[0]);
-				cout << x << "  " << x << "  " << member->st[0]->wSecond << endl;
+				//cout << x << "  " << x << "  " << member->st[0]->wSecond << endl;
+				cout << member->st[0]->wMinute << ":"
+					<< member->st[0]->wSecond << ":"
+					<< member->st[0]->wMilliseconds << " \n";
 				x += h;
-				FIRST = false;
-				SECOND = true;
-				if (!ReleaseMutex(ghMutex))
-				{
-					cout << "ERROR count_func";
-				}
-
+				ResetEvent(ghEvent[0]);
+				SetEvent(ghEvent[1]);
+				SetEvent(ghEvent[2]);
 				break;
-			case WAIT_ABANDONED:
-				return FALSE;
-			}
+			default:
+				cout << "ERROR 0";
 		}
 	}
 
@@ -106,30 +98,29 @@ DWORD WINAPI write_in_file(PVOID ptr)
 	fout.close();
 	while (true)
 	{
-		if (SECOND)
+		dwWaitResult = WaitForSingleObject(ghEvent[1], INFINITE);
+		switch (dwWaitResult)
 		{
-			dwWaitResult = WaitForSingleObject(ghMutex, INFINITE);
-			switch (dwWaitResult)
-			{
 
 			case WAIT_OBJECT_0:
 				fout.open("file.txt", ios_base::app);
 				fout << member->table->getX() << " " << member->table->getY() << "\n";
 				GetLocalTime(member->st[1]);
 				fout.close();
-				SECOND = false;
-				THIRD = true;
-				if (!ReleaseMutex(ghMutex))
+				/*cout << member->st[1]->wMinute << ":"
+					<< member->st[1]->wSecond << ":"
+					<< member->st[1]->wMilliseconds << "  ";*/
+				ResetEvent(ghEvent[1]);
+				if (!WaitForSingleObject(ghEvent[2], 0))
 				{
-					cout << "ERROR write_in_file";
+					SetEvent(ghEvent[3]);
+					
 				}
 				break;
-			case WAIT_ABANDONED:
-				return FALSE;
-			}
+			default:
+				cout << "ERROR 1";
 		}
 	}
-
 	return TRUE;
 }
 
@@ -137,33 +128,33 @@ DWORD WINAPI write_in_Point(PVOID ptr)
 {
 	Member* member = reinterpret_cast<Member*>(ptr);
 	DWORD dwWaitResult;
-	
+
 	while (true)
 	{
-		if (THIRD)
+		dwWaitResult = WaitForSingleObject(ghEvent[2], INFINITE);
+		switch (dwWaitResult)
 		{
-			dwWaitResult = WaitForSingleObject(ghMutex, INFINITE);
-			switch (dwWaitResult)
-			{
 			case WAIT_OBJECT_0:
 				member->point->setX(member->table->getX());
 				member->point->setX(member->table->getY());
 				GetLocalTime(member->st[2]);
-				THIRD = false;
-				FORTH = true;
-				if (!ReleaseMutex(ghMutex))
+				/*cout << member->st[2]->wMinute << ":"
+					<< member->st[2]->wSecond << ":"
+					<< member->st[2]->wMilliseconds << "  ";*/
+				ResetEvent(ghEvent[2]);
+				if (!WaitForSingleObject(ghEvent[1], 0))
 				{
-					cout << "ERROR write_in_Point";
+					SetEvent(ghEvent[3]);
+					
 				}
 				break;
-			case WAIT_ABANDONED:
-				return FALSE;
-			}
+			default:
+				cout << "ERROR 2";
 		}
 	}
-
 	return TRUE;
 }
+	
 
 DWORD WINAPI write_log(PVOID ptr)
 {
@@ -174,14 +165,13 @@ DWORD WINAPI write_log(PVOID ptr)
 	DWORD dwWaitResult;
 	while (true)
 	{
-		if (FORTH)
+		dwWaitResult = WaitForSingleObject(ghEvent[3], INFINITE);
+		switch (dwWaitResult)
 		{
-			dwWaitResult = WaitForSingleObject(ghMutex, INFINITE);
-			switch (dwWaitResult)
-			{
 			case WAIT_OBJECT_0:
 				fout.open("file.log", ios_base::app);
-				fout << member->st[0]->wMinute << ":"
+				fout << member->table->getX() << " "
+					<< member->st[0]->wMinute << ":"
 					<< member->st[0]->wSecond << ":"
 					<< member->st[0]->wMilliseconds
 					<< " "
@@ -194,18 +184,12 @@ DWORD WINAPI write_log(PVOID ptr)
 					<< member->st[2]->wMilliseconds
 					<< "\n";
 				fout.close();
-				FORTH = false;
-				FIRST = true;
-				if (!ReleaseMutex(ghMutex))
-				{
-					cout << "ERROR write_log";
-				}
+				ResetEvent(ghEvent[3]);
+				SetEvent(ghEvent[0]);
 				break;
-			case WAIT_ABANDONED:
-				return FALSE;
-			}
+			default:
+				cout << "ERROR 3";
 		}
 	}
-
 	return TRUE;
 }
